@@ -1,0 +1,103 @@
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Country {
+  id          Int          @id @default(autoincrement())
+  name        String       @unique
+  code        String       @unique
+  users       User[]
+  restaurants Restaurant[]
+  createdAt   DateTime     @default(now())
+}
+
+model User {
+  id             Int             @id @default(autoincrement())
+  email          String          @unique
+  password       String
+  name           String
+  role           Role            @default(MEMBER)
+  countryId      Int
+  country        Country         @relation(fields: [countryId], references: [id])
+  orders         Order[]
+  paymentMethods PaymentMethod[]
+  createdAt      DateTime        @default(now())
+}
+
+model Restaurant {
+  id        Int        @id @default(autoincrement())
+  name      String
+  address   String
+  countryId Int
+  country   Country    @relation(fields: [countryId], references: [id])
+  menuItems MenuItem[]
+  orders    Order[]
+  createdAt DateTime   @default(now())
+}
+
+model MenuItem {
+  id           Int         @id @default(autoincrement())
+  name         String
+  description  String
+  price        Float
+  category     String
+  restaurantId Int
+  restaurant   Restaurant  @relation(fields: [restaurantId], references: [id])
+  orderItems   OrderItem[]
+  createdAt    DateTime    @default(now())
+}
+
+model Order {
+  id            Int           @id @default(autoincrement())
+  status        OrderStatus   @default(PENDING)
+  totalAmount   Float         @default(0)
+  userId        Int
+  user          User          @relation(fields: [userId], references: [id])
+  restaurantId  Int
+  restaurant    Restaurant    @relation(fields: [restaurantId], references: [id])
+  paymentMethod PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  paymentMethodId Int?
+  items         OrderItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model OrderItem {
+  id         Int      @id @default(autoincrement())
+  quantity   Int
+  unitPrice  Float
+  orderId    Int
+  order      Order    @relation(fields: [orderId], references: [id])
+  menuItemId Int
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+model PaymentMethod {
+  id         Int     @id @default(autoincrement())
+  type       String
+  last4      String
+  provider   String
+  userId     Int
+  user       User    @relation(fields: [userId], references: [id])
+  orders     Order[]
+  createdAt  DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  MEMBER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  DELIVERED
+  CANCELLED
+}
